@@ -1,10 +1,10 @@
 doctype html
 html(lang='en-gb')
   head
-    <meta charset="utf-8">
-    <meta name="description" content="">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>hex v1</title>
+    meta(charset="utf-8")
+    meta(name="description" content="")
+    meta(name="viewport" content="width=device-width, initial-scale=1")
+    title hex v1
 
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
 
@@ -19,6 +19,16 @@ html(lang='en-gb')
 
 
   body
+    each colour, index in data
+      - let hex = `#${colour.hex}`
+      - let nextHex = data[index+1] ? `#${data[index+1].hex}` : hex
+      .entry(style={background: hex})
+        .pinned
+          .title
+            h1= hex
+            p= colour.definition
+        .gradient(style={background:`linear-gradient(${ hex }, ${ nextHex })`})
+
 
 
     //- Google Analytics: change UA-XXXXX-X to be your site's ID.
