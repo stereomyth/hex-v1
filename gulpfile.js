@@ -64,6 +64,7 @@ gulp.task('pug', () => {
   return gulp
     .src('app/*.pug')
     .pipe($.plumber())
+    .pipe($.data(file => ({ data: require('./app/data.json') })))
     .pipe($.pug())
     .pipe(gulp.dest('.tmp'))
     .pipe(reload({ stream: true }));
