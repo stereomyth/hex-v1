@@ -60,27 +60,22 @@ gulp.task('lint:test', () => {
   return lint('test/spec/**/*.js').pipe(gulp.dest('test/spec'));
 });
 
+gulp.task('pug', () => {
+  return gulp
+    .src('app/*.pug')
+    .pipe($.plumber())
+    .pipe($.pug())
+    .pipe(gulp.dest('.tmp'))
+    .pipe(reload({ stream: true }));
+});
+
 gulp.task('html', ['styles', 'scripts'], () => {
   return gulp
-    .src('app/*.html')
+    .src('app/*.pug')
     .pipe($.useref({ searchPath: ['.tmp', 'app', '.'] }))
     .pipe($.if(/\.js$/, $.uglify({ compress: { drop_console: true } })))
     .pipe($.if(/\.css$/, $.cssnano({ safe: true, autoprefixer: false })))
-    .pipe(
-      $.if(
-        /\.html$/,
-        $.htmlmin({
-          collapseWhitespace: true,
-          minifyCSS: true,
-          minifyJS: { compress: { drop_console: true } },
-          processConditionalComments: true,
-          removeComments: true,
-          removeEmptyAttributes: true,
-          removeScriptTypeAttributes: true,
-          removeStyleLinkTypeAttributes: true,
-        })
-      )
-    )
+    .pipe($.if(/\.pug$/, $.pug()))
     .pipe(gulp.dest('dist'));
 });
 
@@ -103,7 +98,7 @@ gulp.task('fonts', () => {
 
 gulp.task('extras', () => {
   return gulp
-    .src(['app/*', '!app/*.html'], {
+    .src(['app/*', '!app/*.pug'], {
       dot: true,
     })
     .pipe(gulp.dest('dist'));
@@ -112,27 +107,30 @@ gulp.task('extras', () => {
 gulp.task('clean', del.bind(null, ['.tmp', 'dist']));
 
 gulp.task('serve', () => {
-  runSequence(['clean', 'wiredep'], ['styles', 'scripts', 'fonts'], () => {
-    browserSync.init({
-      notify: false,
-      port: 9000,
-      server: {
-        baseDir: ['.tmp', 'app'],
-        routes: {
-          '/bower_components': 'bower_components',
+  runSequence(
+    ['clean', 'wiredep'],
+    ['pug', 'styles', 'scripts', 'fonts'],
+    () => {
+      browserSync.init({
+        notify: false,
+        port: 9000,
+        server: {
+          baseDir: ['.tmp', 'app'],
+          routes: {
+            '/bower_components': 'bower_components',
+          },
         },
-      },
-    });
+      });
 
-    gulp
-      .watch(['app/*.html', 'app/images/**/*', '.tmp/fonts/**/*'])
-      .on('change', reload);
+      gulp.watch(['app/images/**/*', '.tmp/fonts/**/*']).on('change', reload);
 
-    gulp.watch('app/styles/**/*.scss', ['styles']);
-    gulp.watch('app/scripts/**/*.js', ['scripts']);
-    gulp.watch('app/fonts/**/*', ['fonts']);
-    gulp.watch('bower.json', ['wiredep', 'fonts']);
-  });
+      gulp.watch('app/*.pug', ['pug']);
+      gulp.watch('app/styles/**/*.scss', ['styles']);
+      gulp.watch('app/scripts/**/*.js', ['scripts']);
+      gulp.watch('app/fonts/**/*', ['fonts']);
+      gulp.watch('bower.json', ['wiredep', 'fonts']);
+    }
+  );
 });
 
 gulp.task('serve:dist', ['default'], () => {
@@ -177,7 +175,7 @@ gulp.task('wiredep', () => {
     .pipe(gulp.dest('app/styles'));
 
   gulp
-    .src('app/*.html')
+    .src('app/*.pug')
     .pipe(
       wiredep({
         ignorePath: /^(\.\.\/)*\.\./,
